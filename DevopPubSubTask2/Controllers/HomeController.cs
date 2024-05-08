@@ -16,7 +16,8 @@ namespace DevopPubSubTask2.Controllers
         {
             var db = redis.GetDatabase();
 
-            await db.ListTrimAsync(cashChannelMessages, 1, 0);
+            db.KeyDelete(cashChannelMessages);
+
             await db.KeyDeleteAsync(cashClickChannelName);
 
             return View();
@@ -51,11 +52,56 @@ namespace DevopPubSubTask2.Controllers
         {
             var db = redis.GetDatabase();
 
+
             var channelName = await db.StringGetAsync(cashClickChannelName);
 
-            var messages = db.ListRange(cashChannelMessages);
+            var messages = await db.HashGetAllAsync(cashChannelMessages);
 
-            List<string> messageList = messages.Select(m => m.ToString()).ToList();
+            //List<string> messageList = messages.Select(m => m.ToString()).ToList();
+
+
+            //var messages = await db.HashGetAllAsync(cashChannelMessages);
+
+
+            //HashEntry[] messages = await db.HashGetAllAsync("cashChannelMessages");
+
+            // Her bir girdiyi kontrol ederek "message" alanını alın
+            List<string> messageList = new List<string>();
+            List<string> ids = new List<string>();
+
+            //var d = messages.Select(c => c.Name == "id").ToList();
+
+            foreach (var entry in messages)
+            {
+                string id = entry.Name;
+
+                if (id == "id")
+                {
+                    ids.Add(id);
+                }
+            }
+
+            bool ayniDegerlerVarMi = false;
+            for (int i = 0; i < ids.Count; i++)
+            {
+                for (int j = i + 1; j < ids.Count; j++)
+                {
+                    if (ids[i] == ids[j])
+                    {
+                        ayniDegerlerVarMi = true;
+                        break;
+                    }
+                }
+                if (ayniDegerlerVarMi)
+                {
+                    break;
+                }
+            }
+
+            if (!ayniDegerlerVarMi)
+            {
+
+            }
 
             return Ok(messageList);
         }
@@ -72,7 +118,37 @@ namespace DevopPubSubTask2.Controllers
             {
                 await subscriber.SubscribeAsync(c, async (channel, message) =>
                 {
-                    await db.ListLeftPushAsync(cashChannelMessages, message);
+                    Guid id = Guid.NewGuid();
+                    bool isIn = false;
+
+                    HashEntry[] messages = db.HashGetAll(cashChannelMessages);
+
+                    foreach (var item in messages)
+                    {
+                        // Her bir alanın ID'sini ve mesajını alın
+                        string id2 = item.Value.ToString(); // ID
+
+                        // Eğer alanın ID'si aranan ID'ye eşitse, o alanın mesajını yazdırın
+                        if (id2 == id.ToString())
+                        {
+                            isIn = true;
+                        }
+                    }
+
+                    if (!isIn)
+                    {
+                        //HashEntry[] hashEntries = new HashEntry[]
+                        //{
+                        //   new HashEntry($"id", $"{id}"),
+                        //   new HashEntry($"message", $"{message}")
+                        //};
+
+                        db.HashSet(cashChannelMessages, "message:" + id, message);
+
+                        //await db.HashSetAsync(cashChannelMessages, hashEntries);
+                    }
+
+                    //await db.ListLeftPushAsync(cashChannelMessages, message);
                 });
             }
         }
@@ -95,7 +171,7 @@ namespace DevopPubSubTask2.Controllers
         {
             var db = redis.GetDatabase();
 
-            await db.ListTrimAsync(cashChannelMessages, 1, 0);
+            db.KeyDelete(cashChannelMessages);
 
             await db.StringSetAsync(cashClickChannelName, channelName);
         }

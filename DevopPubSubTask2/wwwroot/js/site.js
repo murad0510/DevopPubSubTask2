@@ -18,6 +18,7 @@ function GetAllMessages() {
         url: `/Home/GetAllMessages`,
         method: "GET",
         success: function (data) {
+
             var context = "";
             for (var i = 0; i < data.length; i++) {
                 context += `
