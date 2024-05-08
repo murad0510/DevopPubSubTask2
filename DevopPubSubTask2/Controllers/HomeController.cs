@@ -56,7 +56,7 @@ namespace DevopPubSubTask2.Controllers
 
             foreach (var message in messages)
             {
-                var messageValue = message.Value.ToString(); // Mesajın değerini alırız
+                var messageValue = message.Value.ToString();
                 messagesAll.Add(messageValue);
             }
 
