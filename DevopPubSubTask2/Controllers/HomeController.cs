@@ -48,13 +48,19 @@ namespace DevopPubSubTask2.Controllers
         {
             var db = redis.GetDatabase();
 
-            var channelName = await db.StringGetAsync(cashClickChannelName);
+            //var channelName = await db.StringGetAsync(cashClickChannelName);
 
             var messages = await db.HashGetAllAsync(cashChannelMessages);
 
-            List<string> messageList = messages.Select(m => m.ToString()).ToList();
+            var messagesAll = new List<string>();
 
-            return Ok(messageList);
+            foreach (var message in messages)
+            {
+                var messageValue = message.Value.ToString(); // Mesajın değerini alırız
+                messagesAll.Add(messageValue);
+            }
+
+            return Ok(messagesAll);
         }
 
         public async Task ClickChannelMessagesAddedCash()
