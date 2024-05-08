@@ -16,10 +16,6 @@ namespace DevopPubSubTask2.Controllers
         {
             var db = redis.GetDatabase();
 
-            db.KeyDelete(cashChannelMessages);
-
-            await db.KeyDeleteAsync(cashClickChannelName);
-
             return View();
         }
 
@@ -52,56 +48,11 @@ namespace DevopPubSubTask2.Controllers
         {
             var db = redis.GetDatabase();
 
-
             var channelName = await db.StringGetAsync(cashClickChannelName);
 
             var messages = await db.HashGetAllAsync(cashChannelMessages);
 
-            //List<string> messageList = messages.Select(m => m.ToString()).ToList();
-
-
-            //var messages = await db.HashGetAllAsync(cashChannelMessages);
-
-
-            //HashEntry[] messages = await db.HashGetAllAsync("cashChannelMessages");
-
-            // Her bir girdiyi kontrol ederek "message" alanını alın
-            List<string> messageList = new List<string>();
-            List<string> ids = new List<string>();
-
-            //var d = messages.Select(c => c.Name == "id").ToList();
-
-            foreach (var entry in messages)
-            {
-                string id = entry.Name;
-
-                if (id == "id")
-                {
-                    ids.Add(id);
-                }
-            }
-
-            bool ayniDegerlerVarMi = false;
-            for (int i = 0; i < ids.Count; i++)
-            {
-                for (int j = i + 1; j < ids.Count; j++)
-                {
-                    if (ids[i] == ids[j])
-                    {
-                        ayniDegerlerVarMi = true;
-                        break;
-                    }
-                }
-                if (ayniDegerlerVarMi)
-                {
-                    break;
-                }
-            }
-
-            if (!ayniDegerlerVarMi)
-            {
-
-            }
+            List<string> messageList = messages.Select(m => m.ToString()).ToList();
 
             return Ok(messageList);
         }
@@ -125,11 +76,11 @@ namespace DevopPubSubTask2.Controllers
 
                     foreach (var item in messages)
                     {
-                        // Her bir alanın ID'sini ve mesajını alın
-                        string id2 = item.Value.ToString(); // ID
+                        string id2 = item.Name.ToString();
 
-                        // Eğer alanın ID'si aranan ID'ye eşitse, o alanın mesajını yazdırın
-                        if (id2 == id.ToString())
+                        var d = id.ToString().Replace("{", "").Replace("}", "");
+
+                        if (id2 == d)
                         {
                             isIn = true;
                         }
@@ -137,13 +88,12 @@ namespace DevopPubSubTask2.Controllers
 
                     if (!isIn)
                     {
-                        //HashEntry[] hashEntries = new HashEntry[]
-                        //{
-                        //   new HashEntry($"id", $"{id}"),
-                        //   new HashEntry($"message", $"{message}")
-                        //};
+                        HashEntry[] hashEntries = new HashEntry[]
+                        {
+                           new HashEntry($"{id}", $"{message}"),
+                        };
 
-                        db.HashSet(cashChannelMessages, "message:" + id, message);
+                        db.HashSet(cashChannelMessages, hashEntries);
 
                         //await db.HashSetAsync(cashChannelMessages, hashEntries);
                     }
@@ -171,7 +121,11 @@ namespace DevopPubSubTask2.Controllers
         {
             var db = redis.GetDatabase();
 
+            //db.KeyDelete(cashChannelMessages);
+
             db.KeyDelete(cashChannelMessages);
+
+            await db.KeyDeleteAsync(cashClickChannelName);
 
             await db.StringSetAsync(cashClickChannelName, channelName);
         }
